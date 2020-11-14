@@ -5,7 +5,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
+	"github.com/mylxsw/mysql-diff/util"
 	"github.com/pmezard/go-difflib/difflib"
 )
 
@@ -45,14 +47,26 @@ func NewDiffService(tmpDir string, contextLine int) *DiffService {
 }
 
 func (ds DiffService) Diff(name string, target Stringer) Diff {
+	var original []byte
+	idx, _ := ioutil.ReadFile(filepath.Join(ds.tmpDir, name+".idx"))
+	if string(idx) != "" {
+		idxFilepath := filepath.Join(ds.tmpDir, string(idx))
+		if util.FileExist(idxFilepath) {
+			original, _ = ioutil.ReadFile(idxFilepath)
+		}
+	}
+
 	targetStr := target.String()
-	originalStr, _ := ioutil.ReadFile(filepath.Join(ds.tmpDir, name+".stat"))
-	diffRes := ds.diff(name+".last", string(originalStr), name+".new", targetStr)
+	diffRes := ds.diff(string(idx), string(original), name+".new", targetStr)
+
 	return Diff{
 		diff: diffRes,
 		save: func() error {
-			_ = ioutil.WriteFile(filepath.Join(ds.tmpDir, name+".diff"), []byte(diffRes), os.ModePerm)
-			return ioutil.WriteFile(filepath.Join(ds.tmpDir, name+".stat"), []byte(targetStr), os.ModePerm)
+			targetName := fmt.Sprintf("%s.%s.stat", name, time.Now().Format("20060102150405"))
+			_ = ioutil.WriteFile(filepath.Join(ds.tmpDir, targetName+".diff"), []byte(diffRes), os.ModePerm)
+			_ = ioutil.WriteFile(filepath.Join(ds.tmpDir, targetName), []byte(targetStr), os.ModePerm)
+
+			return ioutil.WriteFile(filepath.Join(ds.tmpDir, name+".idx"), []byte(targetName), os.ModePerm)
 		},
 	}
 }
