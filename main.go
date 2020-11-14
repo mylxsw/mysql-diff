@@ -28,7 +28,7 @@ func main() {
 	flag.BoolVar(&diffVars, "diff-vars", true, "是否对比系统变量差异")
 	flag.BoolVar(&diffUsers, "diff-users", true, "是否对比用户差异")
 	flag.BoolVar(&diffDatabases, "diff-databases", true, "是否对比数据库差异")
-	flag.BoolVar(&diffDatabases, "with-tables", true, "对比数据库差异时，是否启用表名差异对比")
+	flag.BoolVar(&withTables, "with-tables", false, "对比数据库差异时，是否启用表名差异对比")
 
 	flag.StringVar(&excludeVars, "exclude-vars", "gtid_binlog_pos,gtid_binlog_state,gtid_current_pos", "需要排除的系统变量")
 	flag.StringVar(&excludeDatabases, "exclude-dbs", "performance_schema,information_schema,mysql,sys", "需要排除的系统变量")
