@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/mylxsw/mysql-diff/util"
+	"github.com/mylxsw/go-utils/str"
 )
 
 type Variables []Variable
@@ -129,7 +129,7 @@ func (ms *MySQLServer) DatabaseNames(excludeDatabases []string) ([]string, error
 			return nil, err
 		}
 
-		if util.InIgnoreCase(dbname, excludeDatabases) {
+		if str.InIgnoreCase(dbname, excludeDatabases) {
 			continue
 		}
 
@@ -201,7 +201,7 @@ func (ms *MySQLServer) Variables(excludeVariables []string) (Variables, error) {
 			return nil, err
 		}
 
-		if util.InIgnoreCase(variable.Key, excludeVariables) {
+		if str.InIgnoreCase(variable.Key, excludeVariables) {
 			continue
 		}
 

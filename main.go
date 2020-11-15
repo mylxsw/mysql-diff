@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/mylxsw/go-utils/diff"
+	"github.com/mylxsw/go-utils/file"
 	"github.com/mylxsw/mysql-diff/mysql"
-	"github.com/mylxsw/mysql-diff/service"
 )
 
 var dbHost, dbUser, dbPassword string
@@ -38,10 +39,12 @@ func main() {
 
 	flag.Parse()
 
-	if err := os.MkdirAll(dataDir, os.ModePerm); err != nil {
+	fs := file.LocalFS{}
+	if err := fs.MkDir(dataDir); err != nil {
 		panic(err)
 	}
-	diffSvc := service.NewDiffService(dataDir, contextLine)
+
+	differ := diff.NewDiffer(fs, dataDir, contextLine)
 
 	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql?loc=Local&parseTime=true", dbUser, dbPassword, dbHost, dbPort))
 	if err != nil {
@@ -58,7 +61,7 @@ func main() {
 			return
 		}
 
-		if err := diffSvc.Diff("variables", variables).PrintAndSave(); err != nil {
+		if err := differ.DiffLatest("variables", variables.String()).PrintAndSave(os.Stdout); err != nil {
 			panic(err)
 		}
 	}
@@ -69,7 +72,7 @@ func main() {
 			panic(err)
 			return
 		}
-		if err := diffSvc.Diff("users", users).PrintAndSave(); err != nil {
+		if err := differ.DiffLatest("users", users.String()).PrintAndSave(os.Stdout); err != nil {
 			panic(err)
 		}
 	}
@@ -80,7 +83,7 @@ func main() {
 			panic(err)
 			return
 		}
-		if err := diffSvc.Diff("databases", databases).PrintAndSave(); err != nil {
+		if err := differ.DiffLatest("databases", databases.String()).PrintAndSave(os.Stdout); err != nil {
 			panic(err)
 		}
 	}
