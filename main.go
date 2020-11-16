@@ -18,7 +18,7 @@ var dbPort int
 var diffVars, diffUsers, diffDatabases, withTables bool
 var excludeVars, excludeDatabases string
 var dataDir string
-var contextLine int
+var contextLine, keepVersion uint
 
 func main() {
 	flag.StringVar(&dbHost, "db-host", "127.0.0.1", "MySQL Host")
@@ -35,7 +35,8 @@ func main() {
 	flag.StringVar(&excludeDatabases, "exclude-dbs", "performance_schema,information_schema,mysql,sys", "需要排除的系统变量")
 
 	flag.StringVar(&dataDir, "data-dir", "./tmp", "diff 状态数据存储目录")
-	flag.IntVar(&contextLine, "context-line", 2, "diff 上下文信息数量")
+	flag.UintVar(&contextLine, "context-line", 2, "diff 上下文信息数量")
+	flag.UintVar(&keepVersion, "keep-version", 100, "保留多少个版本的历史记录")
 
 	flag.Parse()
 
@@ -44,7 +45,7 @@ func main() {
 		panic(err)
 	}
 
-	differ := diff.NewDiffer(fs, dataDir, contextLine)
+	differ := diff.NewDiffer(fs, dataDir, int(contextLine))
 
 	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql?loc=Local&parseTime=true", dbUser, dbPassword, dbHost, dbPort))
 	if err != nil {
@@ -61,9 +62,11 @@ func main() {
 			return
 		}
 
-		if err := differ.DiffLatest("variables", variables.String()).PrintAndSave(os.Stdout); err != nil {
+		df := differ.DiffLatest("variables", variables.String())
+		if err := df.PrintAndSave(os.Stdout); err != nil {
 			panic(err)
 		}
+		_ = df.Clean(keepVersion)
 	}
 
 	if diffUsers {
@@ -72,9 +75,12 @@ func main() {
 			panic(err)
 			return
 		}
-		if err := differ.DiffLatest("users", users.String()).PrintAndSave(os.Stdout); err != nil {
+
+		df := differ.DiffLatest("users", users.String())
+		if err := df.PrintAndSave(os.Stdout); err != nil {
 			panic(err)
 		}
+		_ = df.Clean(keepVersion)
 	}
 
 	if diffDatabases {
@@ -83,8 +89,11 @@ func main() {
 			panic(err)
 			return
 		}
-		if err := differ.DiffLatest("databases", databases.String()).PrintAndSave(os.Stdout); err != nil {
+
+		df := differ.DiffLatest("databases", databases.String())
+		if err := df.PrintAndSave(os.Stdout); err != nil {
 			panic(err)
 		}
+		_ = df.Clean(keepVersion)
 	}
 }
