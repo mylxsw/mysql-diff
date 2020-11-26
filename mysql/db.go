@@ -4,11 +4,24 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"sort"
 
 	"github.com/mylxsw/go-utils/str"
 )
 
 type Variables []Variable
+
+func (vs Variables) Len() int {
+	return len(vs)
+}
+
+func (vs Variables) Less(i, j int) bool {
+	return vs[i].Key < vs[j].Key
+}
+
+func (vs Variables) Swap(i, j int) {
+	vs[i], vs[j] = vs[j], vs[i]
+}
 
 func (vs Variables) String() string {
 	strbuf := bytes.NewBuffer(nil)
@@ -88,6 +101,7 @@ func (ms *MySQLServer) TablesInDB(dbname string) ([]string, error) {
 		tables = append(tables, table)
 	}
 
+	sort.Strings(tables)
 	return tables, nil
 }
 
@@ -136,12 +150,13 @@ func (ms *MySQLServer) DatabaseNames(excludeDatabases []string) ([]string, error
 		databases = append(databases, dbname)
 	}
 
+	sort.Strings(databases)
 	return databases, nil
 }
 
 // UsersWithPrivileges 查询用户列表，包含用户权限
 func (ms *MySQLServer) UsersWithPrivileges() (Users, error) {
-	rows, err := ms.db.Query("SELECT user, host FROM mysql.user")
+	rows, err := ms.db.Query("SELECT user, host FROM mysql.user ORDER BY user, host")
 	if err != nil {
 		return nil, err
 	}
@@ -184,6 +199,7 @@ func (ms *MySQLServer) userPrivileges(username string, host string) ([]string, e
 		privileges = append(privileges, prv)
 	}
 
+	sort.Strings(privileges)
 	return privileges, nil
 }
 
@@ -208,5 +224,6 @@ func (ms *MySQLServer) Variables(excludeVariables []string) (Variables, error) {
 		results = append(results, variable)
 	}
 
+	sort.Sort(results)
 	return results, nil
 }
